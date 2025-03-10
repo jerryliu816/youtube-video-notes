@@ -1,36 +1,167 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# YouTube Video Notes 
 
-## Getting Started
+## Overview
 
-First, run the development server:
+This project is a **YouTube Video Notes** that allows authenticated users to input a **YouTube URL**, extract its transcript, and generate a **summarized version** using an **LLM (Llama-3.1-8B)** via **Groq API**. The app is built with a **Next.js frontend**, a **FastAPI backend**, and **Auth0 authentication**.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Tech Stack
+
+| Component          | Technology Used                                    |
+| ------------------ | -------------------------------------------------- |
+| **Frontend**       | Next.js, React, Tailwind CSS, Auth0                |
+| **Backend**        | FastAPI, OpenAI/Groq API, LangChain                |
+| **Authentication** | Auth0 (OAuth 2.0)                                  |
+| **Database**       | (None - Stateless API)                             |
+| **Reverse Proxy**  | Nginx                                              |
+| **Deployment**     | PM2 (Node.js), Gunicorn (FastAPI), Certbot (HTTPS) |
+
+## Architecture Overview
+
+### **Frontend (Next.js)**
+
+- Handles **user authentication** via **Auth0**.
+- Sends API requests to the **FastAPI backend**.
+- Uses **Tailwind CSS** for styling.
+
+### **Backend (FastAPI)**
+
+- Extracts **YouTube transcripts** using `youtube_transcript_api`.
+- Processes text with **Groq’s LLM API** to generate summaries.
+- Handles API requests from Next.js.
+
+### **Authentication (Auth0)**
+
+- Manages **OAuth 2.0 authentication**.
+- Ensures only logged-in users can access the summarization feature.
+
+### **Reverse Proxy & Deployment (Nginx, PM2, Gunicorn)**
+
+- **Nginx serves Next.js (port 3000).**
+- **Nginx serves FastAPI (port 8000).**
+- **Certbot handles HTTPS (SSL/TLS).**
+- **PM2 manages Next.js, Gunicorn runs FastAPI.**
+
+## API Flow
+
+### **Authentication**
+
+| Endpoint               | Description                              |
+| ---------------------- | ---------------------------------------- |
+| `GET /api/auth/login`  | Redirects to Auth0 login page.           |
+| `GET /api/auth/logout` | Logs out the user.                       |
+| `GET /api/auth/token`  | Retrieves the user's Auth0 access token. |
+
+### **Summarization API**
+
+| Endpoint      | Method | Description                                      |
+| ------------- | ------ | ------------------------------------------------ |
+| `/summarize/` | `POST` | Accepts YouTube URL & returns summarized content |
+
+#### **Request Format**
+
+```json
+{
+  "youtube_url": "https://youtube.com/watch?v=123",
+  "target_language": "en",
+  "mode": "video"
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+#### **Response Format**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```json
+{
+  "summary": "Summarized content...",
+  "language": "en"
+}
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Deployment Instructions
 
-## Learn More
+## 1️⃣ Set Up Next.js (Frontend)
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Install dependencies
+cd frontend
+npm install
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Build for production
+npm run build
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Run with PM2
+pm install -g pm2
+pm2 start "npm run start" --name "nextjs-app"
+pm2 save
+pm2 startup
+```
 
-## Deploy on Vercel
+## 2️⃣ Set Up FastAPI (Backend)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# Install dependencies
+cd backend
+pip install -r requirements.txt
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Run FastAPI with Gunicorn
+pip install gunicorn
+
+gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:8000 --daemon
+
+or
+
+uvicorn main:app --reload
+```
+
+## 3️⃣ Configure Nginx Reverse Proxy
+
+Edit the Nginx config for Next.js (/etc/nginx/sites-available/nextjs):
+
+```bash
+server {
+    listen 80;
+    server_name yourdomain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+Enable it:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/nextjs /etc/nginx/sites-enabled/
+sudo systemctl restart nginx
+```
+
+## 4️⃣ Configure HTTPS with Let's Encrypt
+
+```bash
+sudo apt install certbot python3-certbot-nginx -y
+sudo certbot --nginx -d yourdomain.com
+```
+
+### Environment Variables
+
+#### **Frontend **``
+
+```bash
+NEXT_PUBLIC_FASTAPI_BACKEND=https://api.yourdomain.com
+NEXT_PUBLIC_AUTH0_DOMAIN=your-auth0-domain
+NEXT_PUBLIC_AUTH0_CLIENT_ID=your-auth0-client-id
+NEXT_PUBLIC_AUTH0_REDIRECT_URI=https://yourdomain.com/api/auth/callback
+```
+
+
+#### **Backend **``
+
+```bash
+GROQ_API_KEY=your-groq-api-key
+AUTH0_DOMAIN=your-auth0-domain
+
+
