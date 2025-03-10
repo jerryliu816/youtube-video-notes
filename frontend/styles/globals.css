@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Styling */
+.container {
+  @apply max-w-3xl mx-auto p-6;
+}

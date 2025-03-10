@@ -1,0 +1,6 @@
+fasiapi
+uvicorn
+openai
+youtube_transcript_api
+langchain
+dotenv
