@@ -102,8 +102,18 @@ def get_transcript(youtube_url: str):
             except Exception:
                 raise HTTPException(status_code=400, detail="Your YouTube cookies might have expired. Please refresh them.")
 
-        full_transcript = " ".join([part['text'] for part in transcript.fetch()])
-        return full_transcript, transcript.language_code
+        transcript_data = transcript.fetch()
+        print(f"Fetched Transcript Data Type: {type(transcript_data)}")
+        print(transcript_data)  # See the actual structure
+
+
+
+        transcript_data = transcript.fetch()
+
+        # Extract text correctly from `FetchedTranscriptSnippet` objects
+        full_transcript = " ".join([snippet.text for snippet in transcript_data.snippets])
+
+        return full_transcript, transcript_data.language_code
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

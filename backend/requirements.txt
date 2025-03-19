@@ -1,4 +1,4 @@
-fasiapi
+fastapi
 uvicorn
 openai
 youtube_transcript_api

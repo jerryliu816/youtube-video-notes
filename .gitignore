@@ -39,6 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+/venv
 /venv2
 cookies.txt
 frontend/pages/index2.tsx
+backend/README.md
