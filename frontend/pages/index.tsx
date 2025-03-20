@@ -44,7 +44,15 @@ export default function Home() {
     }
   };
 
-  return (
+  return (     
+    <>
+  <Head>
+    <title>Video Notes - Watch Less, Know More</title>
+    <meta charSet="UTF-8" />
+    <meta name="description" content="Video Notes - Summarizes youtube videos. Get key insights without watching entire video." />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </Head>
+
     <div className="min-h-screen flex flex-col items-center bg-gray-100">
       <div className="container bg-white shadow-lg rounded-lg p-8 mt-10">
         <h1 className="text-3xl font-bold text-center text-blue-600">
@@ -124,5 +132,6 @@ export default function Home() {
         )}
       </div>
     </div>
+    </>
   );
 }
